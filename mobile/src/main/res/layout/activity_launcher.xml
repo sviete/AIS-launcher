@@ -7,12 +7,65 @@
     android:background="#000000"
     android:scrollbars="none"
     tools:context=".LauncherActivity">
+    <ImageView
+        android:id="@+id/dom_files"
+        android:layout_width="80dp"
+        android:layout_height="40dp"
+        android:layout_gravity="top|left"
+        android:src="@drawable/ic_launcher_folder"
+        android:focusable="true"
+        android:nextFocusDown="@+id/dom_terminal"
+        android:nextFocusLeft="@+id/tv_settings"
+        android:nextFocusRight="@+id/tv_settings"
+        android:nextFocusUp="@+id/dom_terminal"/>
+
+    <ImageView
+        android:id="@+id/tv_settings"
+        android:layout_width="80dp"
+        android:layout_height="40dp"
+        android:layout_gravity="top|right"
+        android:focusable="true"
+        android:nextFocusDown="@+id/dom_settings"
+        android:nextFocusLeft="@+id/dom_files"
+        android:nextFocusRight="@+id/dom_files"
+        android:nextFocusUp="@+id/dom_settings"
+        android:src="@drawable/ic_launcher_tv" />
 
     <ImageView
         android:id="@+id/fullscreen_content"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        app:srcCompat="@mipmap/ic_launcher"
-        android:layout_gravity="bottom|center"/>
+        android:layout_width="80dp"
+        android:layout_height="120dp"
+        android:layout_gravity="bottom|center"
+        android:focusable="true"
+        android:nextFocusDown="@+id/dom_terminal"
+        android:nextFocusLeft="@+id/dom_terminal"
+        android:nextFocusRight="@+id/dom_settings"
+        android:nextFocusUp="@+id/dom_files"
+        android:src="@drawable/ic_logo_plain" />
+
+    <ImageView
+        android:id="@+id/dom_settings"
+        android:layout_width="80dp"
+        android:layout_height="40dp"
+        android:layout_gravity="bottom|right"
+        android:src="@drawable/ic_launcher_settings"
+        android:focusable="true"
+        android:nextFocusDown="@+id/fullscreen_content"
+        android:nextFocusLeft="@+id/fullscreen_content"
+        android:nextFocusRight="@+id/dom_terminal"
+        android:nextFocusUp="@+id/tv_settings"/>
+
+    <ImageView
+        android:id="@+id/dom_terminal"
+        android:layout_width="80dp"
+        android:layout_height="40dp"
+        android:layout_gravity="bottom|left"
+        android:focusable="true"
+        android:nextFocusDown="@+id/dom_settings"
+        android:nextFocusLeft="@+id/dom_settings"
+        android:nextFocusRight="@+id/fullscreen_content"
+        android:nextFocusUp="@+id/dom_files"
+        android:src="@drawable/ic_launcher_console" />
+
 
 </FrameLayout>

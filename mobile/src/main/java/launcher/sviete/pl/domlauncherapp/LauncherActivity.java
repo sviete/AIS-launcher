@@ -2,20 +2,22 @@ package launcher.sviete.pl.domlauncherapp;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
-import android.app.Activity;
+import android.content.ComponentName;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.res.AssetManager;
 import android.os.Environment;
+import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
+
 import android.os.Bundle;
 import android.os.Handler;
+import android.util.Log;
 import android.view.View;
 import android.widget.ImageView;
-import android.widget.Toast;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -32,6 +34,7 @@ import java.net.URL;
 
 
 public class LauncherActivity extends AppCompatActivity {
+    private final String TAG = LauncherActivity.class.getName();
     private final Handler mHideHandler = new Handler();
     private final Handler mClickHandler = new Handler();
     private View mContentView;
@@ -55,8 +58,7 @@ public class LauncherActivity extends AppCompatActivity {
             hide();
         }
     };
-    static final Integer WRITE_EXTERNAL = 0x1;
-    static final Integer READ_EXTERNAL = 0x2;
+    private static final int WRITE_EXTERNAL = 0x1;
     boolean doubleClick = false;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -64,41 +66,176 @@ public class LauncherActivity extends AppCompatActivity {
         setContentView(R.layout.activity_launcher);
         mContentView = findViewById(R.id.fullscreen_content);
         ImageView imgAisDom = (ImageView) findViewById(R.id.fullscreen_content);
+        ImageView imgAisDomTerminal = (ImageView) findViewById(R.id.dom_terminal);
+        ImageView imgAisDomSettings = (ImageView) findViewById(R.id.dom_settings);
+        ImageView imgAisDomFiles = (ImageView) findViewById(R.id.dom_files);
+        ImageView imgTvSettings = (ImageView) findViewById(R.id.tv_settings);
 
         imgAisDom.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Runnable r = new Runnable() {
-                    @Override
-                    public void run() {
-                        doubleClick = false;
-                    }
-                };
 
-                if (doubleClick) {
-                    if (!isFinishing()){
-                        Toast.makeText(LauncherActivity.this, "OK, root installation",
-                                Toast.LENGTH_LONG).show();
-                    }
-                    rootInstallation();
-                }else {
-                    doubleClick =true;
-                    mClickHandler.postDelayed(r, 500);
+                if (isPermissionGranted(Manifest.permission.WRITE_EXTERNAL_STORAGE)){
+                    // if we have permission than the files should be on sdcard and we should be able to start the app
+                    startBrowserActivity();
+                } else {
+                    appendLog("ask for the permission to write on sdcard...");
+                    askForPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE, WRITE_EXTERNAL);
                 }
-
             }
 
         });
+
+        imgAisDomTerminal.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                startConsoleActivity();
+            }
+
+        });
+
+        imgAisDomSettings.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                startSettingsActivity();
+            }
+
+        });
+
+        imgAisDomFiles.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                startFilesActivity();
+            }
+
+        });
+
+        imgTvSettings.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                startTvActivity();
+            }
+
+        });
+
+
+        // hide the status bar onCreate
+        try {
+            Runtime.getRuntime().exec(
+                    new String[]{"su","-c", "service call activity 42 s16 com.android.systemui"}
+            );
+        } catch (IOException e) {
+            Log.e(TAG, e.toString());
+        }
+
+    }
+
+    private void startConsoleActivity() {
+        Log.d(TAG, "startConsoleActivity Called");
+        try {
+            Intent intent = new Intent(Intent.ACTION_MAIN);
+            intent.setComponent(new ComponentName("pl.sviete.dom","pl.sviete.termux.app.TermuxActivity"));
+            startActivity(intent);
+            finish();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+    }
+
+    private void startSettingsActivity() {
+        Log.d(TAG, "startSettingsActivity Called");
+        try{
+            Intent intent = new Intent(Intent.ACTION_MAIN);
+            intent.setComponent(new ComponentName("pl.sviete.dom","pl.sviete.dom.WelcomeActivity"));
+            startActivity(intent);
+            finish();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+    }
+
+    private void startBrowserActivity() {
+        Log.d(TAG, "startSettingsActivity Called");
+        try{
+            Intent intent = new Intent(Intent.ACTION_MAIN);
+            intent.setComponent(new ComponentName("pl.sviete.dom","pl.sviete.dom.BrowserActivityNative"));
+            startActivity(intent);
+            finish();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+    }
+
+
+
+    private void startFilesActivity() {
+        Log.d(TAG, "startFilesActivity Called");
+        try{
+            Intent intent = new Intent(Intent.ACTION_MAIN);
+            intent.setComponent(new ComponentName("pl.sviete.dom.anexplorer.pro","dev.dworks.apps.anexplorer.DocumentsActivity"));
+            startActivity(intent);
+            finish();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+    }
+
+    private void startTvActivity() {
+        Log.d(TAG, "startTvActivity Called");
+        try{
+            Intent intent = new Intent(Intent.ACTION_MAIN);
+            intent.setComponent(new ComponentName("com.android.tv.settings","com.android.tv.settings.MainSettings"));
+            startActivity(intent);
+            finish();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode,
+                                           @NonNull String permissions[], @NonNull int[] grantResults) {
+        switch (requestCode) {
+            case WRITE_EXTERNAL: {
+                // If request is cancelled, the result arrays are empty.
+                if (grantResults.length > 0
+                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    try{
+                        //copy file to app folder
+                        appendLog("copyFileToSdCard ...");
+                        copyFileToSdCard("files.tar.7z");
+                        appendLog("wait 1 second...");
+                        Handler handler = new Handler();
+                        handler.postDelayed(new Runnable() {
+                            public void run() {
+                                appendLog("startConsoleActivity");
+                                startConsoleActivity();
+                            }
+                        }, 1000);   //1 seconds
+
+                    } catch (Exception e){
+                        e.printStackTrace();
+                    }
+                }
+            }
+
+        }
     }
 
     private void rootInstallation(){
         appendLog("Checking the permissions...");
-        askForPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE, WRITE_EXTERNAL, true);
-        askForPermission(Manifest.permission.READ_EXTERNAL_STORAGE, READ_EXTERNAL, true);
+        askForPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE, WRITE_EXTERNAL);
         appendLog("copy the bootanimation...");
         copyFileToSdCard("bootanimation.zip");
         appendLog("copy the keylayout...");
         copyFileToSdCard("Generic.kl");
+//        appendLog("copy the pl-pl_2.zip...");
+//        copyFileToSdCard("pl-pl_2.zip");
         appendLog("execute the run_as_root...");
         copyScriptToApp("run_as_root.sh");
         runScript("run_as_root.sh");
@@ -229,12 +366,24 @@ public class LauncherActivity extends AppCompatActivity {
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
         setIntent(intent);
-        // the command from AIS dom is send like
-        // am start -n launcher.sviete.pl.domlauncherapp/.LauncherActivity -e command ais-dom-update
-        if (getIntent().getStringExtra("command") != null) {
-            handleCommandFromAisDom(getIntent().getStringExtra("command"));
+    }
+
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        try {
+            Intent intent = getIntent();
+            // the command from AIS dom is send like
+            // am start -n launcher.sviete.pl.domlauncherapp/.LauncherActivity -e command ais-dom-update
+            if (intent.getStringExtra("command") != null) {
+                handleCommandFromAisDom(intent.getStringExtra("command"));
+            }
+        } catch (Exception e){
+            e.printStackTrace();
         }
     }
+
 
     private void appendLog(String text){
         System.out.println(text);
@@ -267,20 +416,21 @@ public class LauncherActivity extends AppCompatActivity {
         }
 
         if ("ais-dom-root-installation".equals(command)){
-            appendLog("Root installation!");
+            appendLog("Root installation TODO - to change the logo or key layout etc!");
             rootInstallation();
         }
     }
 
 
-    private void askForPermission(String permission, Integer requestCode, Boolean info) {
-        if (ContextCompat.checkSelfPermission(LauncherActivity.this, permission) != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(LauncherActivity.this, new String[]{permission}, requestCode);
-        } else {
-            if (info == true) {
-                appendLog("" + permission + " is already granted.");
-            }
+    private boolean isPermissionGranted(String permission) {
+        if (ContextCompat.checkSelfPermission(LauncherActivity.this, permission) == PackageManager.PERMISSION_GRANTED) {
+            return true;
         }
+        return false;
+    }
+
+    private void askForPermission(String permission, Integer requestCode) {
+        ActivityCompat.requestPermissions(LauncherActivity.this, new String[]{permission}, requestCode);
     }
 
 

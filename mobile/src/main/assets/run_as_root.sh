@@ -18,3 +18,9 @@ if [ -f /sdcard/bootanimation.zip ]; then
     mount -o ro,remount,ro /system
 fi
 
+#if [ -f /sdcard/pl-pl_2.zip ]; then
+#    cd /sdcard
+#    unzip pl-pl_2.zip -d /data/data/com.google.android.tts/app_voices
+#    echo "unzip /data/data/com.google.android.tts/app_voices" >> "/sdcard/dom_launcher.log"
+#fi
+

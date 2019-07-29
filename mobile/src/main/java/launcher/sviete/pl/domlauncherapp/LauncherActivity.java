@@ -71,6 +71,23 @@ public class LauncherActivity extends AppCompatActivity {
         ImageView imgAisDomFiles = (ImageView) findViewById(R.id.dom_files);
         ImageView imgTvSettings = (ImageView) findViewById(R.id.tv_settings);
 
+
+        // try to add permission automatically
+        if (!isPermissionGranted(Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
+            Log.i(TAG, "automatically add permission WRITE_EXTERNAL_STORAGE");
+            // trying to add
+            try {
+                Process p = Runtime.getRuntime().exec(
+                        new String[]{"su", "-c", "pm grant launcher.sviete.pl.domlauncherapp android.permission.WRITE_EXTERNAL_STORAGE"}
+                );
+                p.waitFor();
+                int exitStatus = p.exitValue();
+                Log.i(TAG, "automatically add permission WRITE_EXTERNAL_STORAGE return " + exitStatus);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+
         imgAisDom.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -128,6 +145,12 @@ public class LauncherActivity extends AppCompatActivity {
             Log.e(TAG, e.toString());
         }
 
+        // open installation on first run
+        String FILES_PATH = "/data/data/pl.sviete.dom/files/home/AIS/configuration.yaml";
+        File conf = new File(FILES_PATH);
+        if (!conf.exists()){
+            startBrowserActivity();
+        }
     }
 
     private void startConsoleActivity() {
@@ -412,8 +435,14 @@ public class LauncherActivity extends AppCompatActivity {
         appendLog(command);
         if ("ais-dom-update".equals(command)){
             appendLog("Update ais-dom!");
-            doTheUpdate();
+            doTheUpdate(false);
         }
+
+        if ("ais-dom-update-beta".equals(command)){
+            appendLog("Update ais-dom beta!");
+            doTheUpdate(true);
+        }
+
 
         if ("ais-dom-root-installation".equals(command)){
             appendLog("Root installation TODO - to change the logo or key layout etc!");
@@ -434,10 +463,13 @@ public class LauncherActivity extends AppCompatActivity {
     }
 
 
-    private void downloadTheUpdate(){
+    private void downloadTheUpdate(boolean beta){
         appendLog("downloadTheUpdate");
         try {
             URL url = new URL("https://www.powiedz.co/ota/android/AisPanelApp.apk");
+            if (beta) {
+                url = new URL("https://www.powiedz.co/ota/android/AisPanelApp-test.apk");
+            }
             HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
             int status = urlConnection.getResponseCode();
             appendLog("Connection status : " + status);
@@ -553,13 +585,13 @@ public class LauncherActivity extends AppCompatActivity {
         }
     }
 
-    private void doTheUpdate() {
+    private void doTheUpdate(final boolean beta) {
         appendLog("doTheUpdate");
         Thread thread = new Thread(new Runnable() {
             public void run() {
                 try {
                     // download
-                    downloadTheUpdate();
+                    downloadTheUpdate(beta);
                 } catch (Exception e) {
                     e.printStackTrace();
                 }

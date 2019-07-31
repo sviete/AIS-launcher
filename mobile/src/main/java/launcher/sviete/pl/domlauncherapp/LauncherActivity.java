@@ -146,11 +146,29 @@ public class LauncherActivity extends AppCompatActivity {
         }
 
         // open installation on first run
-        String FILES_PATH = "/data/data/pl.sviete.dom/files/home/AIS/configuration.yaml";
-        File conf = new File(FILES_PATH);
-        if (!conf.exists()){
+        if (!ifAisExists()){
             startBrowserActivity();
         }
+    }
+
+    private boolean ifAisExists(){
+        // run the app updates
+        try {
+            Process p = Runtime.getRuntime().exec(new String[]{"su","-c", "if [ -d /data/data/pl.sviete.dom/files/home/AIS ]; then echo 'ok'; else echo 'nok'; fi"});
+            p.waitFor();
+            BufferedReader stdInput = new BufferedReader(new InputStreamReader(p.getInputStream()));
+            String s = "ifAisDomExists";
+            Log.i(TAG, "Called " + s);
+            while ((s = stdInput.readLine()) != null) {
+                Log.i(TAG, "ifAisExists test answer is" + s);
+                if (s.equals("nok")){
+                    return false;
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return true;
     }
 
     private void startConsoleActivity() {
@@ -470,6 +488,8 @@ public class LauncherActivity extends AppCompatActivity {
             if (beta) {
                 url = new URL("https://www.powiedz.co/ota/android/AisPanelApp-test.apk");
             }
+
+            appendLog("Url : " + url.toString());
             HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
             int status = urlConnection.getResponseCode();
             appendLog("Connection status : " + status);

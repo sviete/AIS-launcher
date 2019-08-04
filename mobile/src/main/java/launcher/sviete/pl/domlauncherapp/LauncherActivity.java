@@ -114,7 +114,7 @@ public class LauncherActivity extends AppCompatActivity {
         imgAisDomSettings.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                startSettingsActivity();
+                startWelcomeActivity(true);
             }
 
         });
@@ -184,11 +184,12 @@ public class LauncherActivity extends AppCompatActivity {
 
     }
 
-    private void startSettingsActivity() {
-        Log.d(TAG, "startSettingsActivity Called");
+    private void startWelcomeActivity(boolean stayOnSettings) {
+        Log.d(TAG, "startWelcomeActivity Called");
         try{
             Intent intent = new Intent(Intent.ACTION_MAIN);
             intent.setComponent(new ComponentName("pl.sviete.dom","pl.sviete.dom.WelcomeActivity"));
+            intent.putExtra("BROADCAST_STAY_ON_SETTNGS_ACTIVITY_VALUE", stayOnSettings);
             startActivity(intent);
             finish();
         } catch (Exception e) {
@@ -198,7 +199,7 @@ public class LauncherActivity extends AppCompatActivity {
     }
 
     private void startBrowserActivity() {
-        Log.d(TAG, "startSettingsActivity Called");
+        Log.d(TAG, "startBrowserActivity Called");
         try{
             Intent intent = new Intent(Intent.ACTION_MAIN);
             intent.setComponent(new ComponentName("pl.sviete.dom","pl.sviete.dom.BrowserActivityNative"));
@@ -568,37 +569,9 @@ public class LauncherActivity extends AppCompatActivity {
             }
 
             // 2. open the app
-            p = Runtime.getRuntime().exec(
-                    new String[]{"su","-c", "am start -n pl.sviete.dom/.WelcomeActivity"}
-                    );
+            startWelcomeActivity(false);
 
-            try {
-                p.waitFor();
-                BufferedReader stdInput = new BufferedReader(new
-                        InputStreamReader(p.getInputStream()));
 
-                BufferedReader stdError = new BufferedReader(new
-                        InputStreamReader(p.getErrorStream()));
-                String s = null;
-                while ((s = stdInput.readLine()) != null) {
-                    appendLog(s);
-                }
-
-                while ((s = stdError.readLine()) != null) {
-                    appendLog(s);
-                }
-                if (p.exitValue() != 255) {
-                    appendLog("all done..." + p.exitValue());
-
-                }
-                else {
-                    // TODO Code to run on unsuccessful
-                    appendLog("exitValue: " + p.exitValue());
-                }
-            } catch (InterruptedException e) {
-                // TODO Code to run in interrupted exception
-                appendLog("InterruptedException: " + e.toString());
-            }
         } catch (IOException e) {
             // TODO Code to run in input/output exception
             appendLog("IOException: " + e.toString());

@@ -36,7 +36,6 @@ import java.net.URL;
 public class LauncherActivity extends AppCompatActivity {
     private final String TAG = LauncherActivity.class.getName();
     private final Handler mHideHandler = new Handler();
-    private final Handler mClickHandler = new Handler();
     private View mContentView;
     private final Runnable mHidePart2Runnable = new Runnable() {
         @SuppressLint("InlinedApi")
@@ -94,7 +93,7 @@ public class LauncherActivity extends AppCompatActivity {
 
                 if (isPermissionGranted(Manifest.permission.WRITE_EXTERNAL_STORAGE)){
                     // if we have permission than the files should be on sdcard and we should be able to start the app
-                    startBrowserActivity();
+                    startWelcomeActivity(false);
                 } else {
                     appendLog("ask for the permission to write on sdcard...");
                     askForPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE, WRITE_EXTERNAL);
@@ -147,7 +146,7 @@ public class LauncherActivity extends AppCompatActivity {
 
         // open installation on first run
         if (!ifAisExists()){
-            startBrowserActivity();
+            startWelcomeActivity(false);
         }
     }
 
@@ -195,22 +194,7 @@ public class LauncherActivity extends AppCompatActivity {
         } catch (Exception e) {
             e.printStackTrace();
         }
-
     }
-
-    private void startBrowserActivity() {
-        Log.d(TAG, "startBrowserActivity Called");
-        try{
-            Intent intent = new Intent(Intent.ACTION_MAIN);
-            intent.setComponent(new ComponentName("pl.sviete.dom","pl.sviete.dom.BrowserActivityNative"));
-            startActivity(intent);
-            finish();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-    }
-
 
 
     private void startFilesActivity() {
@@ -416,8 +400,10 @@ public class LauncherActivity extends AppCompatActivity {
         super.onResume();
         try {
             Intent intent = getIntent();
+            //
             // the command from AIS dom is send like
             // am start -n launcher.sviete.pl.domlauncherapp/.LauncherActivity -e command ais-dom-update
+            //
             if (intent.getStringExtra("command") != null) {
                 handleCommandFromAisDom(intent.getStringExtra("command"));
             }

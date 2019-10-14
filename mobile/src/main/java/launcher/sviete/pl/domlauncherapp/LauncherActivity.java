@@ -36,7 +36,6 @@ import java.net.URL;
 public class LauncherActivity extends AppCompatActivity {
     private final String TAG = LauncherActivity.class.getName();
     private final Handler mHideHandler = new Handler();
-    private final Handler mClickHandler = new Handler();
     private View mContentView;
     private final Runnable mHidePart2Runnable = new Runnable() {
         @SuppressLint("InlinedApi")
@@ -94,7 +93,7 @@ public class LauncherActivity extends AppCompatActivity {
 
                 if (isPermissionGranted(Manifest.permission.WRITE_EXTERNAL_STORAGE)){
                     // if we have permission than the files should be on sdcard and we should be able to start the app
-                    startBrowserActivity();
+                    startWelcomeActivity(false);
                 } else {
                     appendLog("ask for the permission to write on sdcard...");
                     askForPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE, WRITE_EXTERNAL);
@@ -114,7 +113,7 @@ public class LauncherActivity extends AppCompatActivity {
         imgAisDomSettings.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                startSettingsActivity();
+                startWelcomeActivity(true);
             }
 
         });
@@ -173,6 +172,26 @@ public class LauncherActivity extends AppCompatActivity {
 
     }
 
+    private boolean ifAisExists(){
+        // run the app updates
+        try {
+            Process p = Runtime.getRuntime().exec(new String[]{"su","-c", "if [ -d /data/data/pl.sviete.dom/files/home/AIS ]; then echo 'ok'; else echo 'nok'; fi"});
+            p.waitFor();
+            BufferedReader stdInput = new BufferedReader(new InputStreamReader(p.getInputStream()));
+            String s = "ifAisDomExists";
+            Log.i(TAG, "Called " + s);
+            while ((s = stdInput.readLine()) != null) {
+                Log.i(TAG, "ifAisExists test answer is" + s);
+                if (s.equals("nok")){
+                    return false;
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return true;
+    }
+
     private void startConsoleActivity() {
         Log.d(TAG, "startConsoleActivity Called");
         try {
@@ -186,32 +205,18 @@ public class LauncherActivity extends AppCompatActivity {
 
     }
 
-    private void startSettingsActivity() {
-        Log.d(TAG, "startSettingsActivity Called");
+    private void startWelcomeActivity(boolean stayOnSettings) {
+        Log.d(TAG, "startWelcomeActivity Called");
         try{
             Intent intent = new Intent(Intent.ACTION_MAIN);
             intent.setComponent(new ComponentName("pl.sviete.dom","pl.sviete.dom.WelcomeActivity"));
+            intent.putExtra("BROADCAST_STAY_ON_SETTNGS_ACTIVITY_VALUE", stayOnSettings);
             startActivity(intent);
             finish();
         } catch (Exception e) {
             e.printStackTrace();
         }
-
     }
-
-    private void startBrowserActivity() {
-        Log.d(TAG, "startSettingsActivity Called");
-        try{
-            Intent intent = new Intent(Intent.ACTION_MAIN);
-            intent.setComponent(new ComponentName("pl.sviete.dom","pl.sviete.dom.BrowserActivityNative"));
-            startActivity(intent);
-            finish();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-    }
-
 
 
     private void startFilesActivity() {
@@ -417,8 +422,10 @@ public class LauncherActivity extends AppCompatActivity {
         super.onResume();
         try {
             Intent intent = getIntent();
+            //
             // the command from AIS dom is send like
             // am start -n launcher.sviete.pl.domlauncherapp/.LauncherActivity -e command ais-dom-update
+            //
             if (intent.getStringExtra("command") != null) {
                 handleCommandFromAisDom(intent.getStringExtra("command"));
             }
@@ -490,6 +497,8 @@ public class LauncherActivity extends AppCompatActivity {
             if (beta) {
                 url = new URL("https://www.powiedz.co/ota/android/AisPanelApp-test.apk");
             }
+
+            appendLog("Url : " + url.toString());
             HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
             int status = urlConnection.getResponseCode();
             appendLog("Connection status : " + status);
@@ -568,37 +577,9 @@ public class LauncherActivity extends AppCompatActivity {
             }
 
             // 2. open the app
-            p = Runtime.getRuntime().exec(
-                    new String[]{"su","-c", "am start -n pl.sviete.dom/.WelcomeActivity"}
-                    );
+            startWelcomeActivity(false);
 
-            try {
-                p.waitFor();
-                BufferedReader stdInput = new BufferedReader(new
-                        InputStreamReader(p.getInputStream()));
 
-                BufferedReader stdError = new BufferedReader(new
-                        InputStreamReader(p.getErrorStream()));
-                String s = null;
-                while ((s = stdInput.readLine()) != null) {
-                    appendLog(s);
-                }
-
-                while ((s = stdError.readLine()) != null) {
-                    appendLog(s);
-                }
-                if (p.exitValue() != 255) {
-                    appendLog("all done..." + p.exitValue());
-
-                }
-                else {
-                    // TODO Code to run on unsuccessful
-                    appendLog("exitValue: " + p.exitValue());
-                }
-            } catch (InterruptedException e) {
-                // TODO Code to run in interrupted exception
-                appendLog("InterruptedException: " + e.toString());
-            }
         } catch (IOException e) {
             // TODO Code to run in input/output exception
             appendLog("IOException: " + e.toString());

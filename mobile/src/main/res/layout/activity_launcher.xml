@@ -4,8 +4,8 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#000000"
     android:scrollbars="none"
+    android:background="@drawable/speaker"
     tools:context=".LauncherActivity">
     <ImageView
         android:id="@+id/dom_files"
@@ -66,6 +66,5 @@
         android:nextFocusRight="@+id/fullscreen_content"
         android:nextFocusUp="@+id/dom_files"
         android:src="@drawable/ic_launcher_console" />
-
 
 </FrameLayout>

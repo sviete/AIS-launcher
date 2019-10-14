@@ -146,11 +146,31 @@ public class LauncherActivity extends AppCompatActivity {
         }
 
         // open installation on first run
-        String FILES_PATH = "/data/data/pl.sviete.dom/files/home/AIS/configuration.yaml";
-        File conf = new File(FILES_PATH);
-        if (!conf.exists()){
-            startBrowserActivity();
+        // String FILES_PATH = "/data/data/pl.sviete.dom/files/home/AIS/configuration.yaml";
+        //        File conf = new File(FILES_PATH);
+        //        if (!conf.exists()){
+        //            startBrowserActivity();
+        //        }
+
+        // trying to check if file exists or not
+        try {
+            Process p = Runtime.getRuntime().exec(
+                    new String[]{"su", "-c", "ls /data/data/pl.sviete.dom/files/home/AIS/configuration.yaml"}
+            );
+            p.waitFor();
+            int exitStatus = p.exitValue();
+            // exitStatus == 0 file exists
+            if (exitStatus != 0){
+                // exitStatus != 0 file not exists
+                startBrowserActivity();
+            }
+            Log.i(TAG, "configuration.yaml " + exitStatus);
+        } catch (Exception e) {
+            Log.i(TAG, "configuration.yaml " +  e.toString());
+            e.printStackTrace();
         }
+
+
     }
 
     private void startConsoleActivity() {

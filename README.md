@@ -6,3 +6,6 @@
 you can install it on Google Play https://play.google.com/store/apps/details?id=launcher.sviete.pl.domlauncherapp
 
 > Note: the application requires a gateway to the home Internet of Things and Audio, the product is available at https://ais-dom.pl
+
+
+![APK](https://raw.githubusercontent.com/sviete/AIS-launcher/master/apk_screen.png)

@@ -88,6 +88,22 @@ public class LauncherActivity extends AppCompatActivity {
             }
         }
 
+        // try to add permission automatically
+        if (!isPermissionGranted(Manifest.permission.READ_EXTERNAL_STORAGE)) {
+            Log.i(TAG, "automatically add permission READ_EXTERNAL_STORAGE");
+            // trying to add
+            try {
+                Process p = Runtime.getRuntime().exec(
+                        new String[]{"su", "-c", "pm grant launcher.sviete.pl.domlauncherapp android.permission.READ_EXTERNAL_STORAGE"}
+                );
+                p.waitFor();
+                int exitStatus = p.exitValue();
+                Log.i(TAG, "automatically add permission READ_EXTERNAL_STORAGE return " + exitStatus);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+
         imgAisDom.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -145,12 +161,6 @@ public class LauncherActivity extends AppCompatActivity {
             Log.e(TAG, e.toString());
         }
 
-        // open installation on first run
-        // String FILES_PATH = "/data/data/pl.sviete.dom/files/home/AIS/configuration.yaml";
-        //        File conf = new File(FILES_PATH);
-        //        if (!conf.exists()){
-        //            startBrowserActivity();
-        //        }
 
         // trying to check if file exists or not
         try {
@@ -455,12 +465,22 @@ public class LauncherActivity extends AppCompatActivity {
         appendLog(command);
         if ("ais-dom-update".equals(command)){
             appendLog("Update ais-dom!");
-            doTheUpdate(false);
+            doTheUpdate(false, false);
         }
 
         if ("ais-dom-update-beta".equals(command)){
             appendLog("Update ais-dom beta!");
-            doTheUpdate(true);
+            doTheUpdate(true, false);
+        }
+
+        if ("ais-dom-update-force".equals(command)){
+            appendLog("Update ais-dom force!");
+            doTheUpdate(false, true);
+        }
+
+        if ("ais-dom-update-beta-force".equals(command)){
+            appendLog("Update ais-dom beta force!");
+            doTheUpdate(true, true);
         }
 
 
@@ -483,7 +503,7 @@ public class LauncherActivity extends AppCompatActivity {
     }
 
 
-    private void downloadTheUpdate(boolean beta){
+    private void downloadTheUpdate(boolean beta, boolean force){
         appendLog("downloadTheUpdate");
         try {
             URL url = new URL("https://www.powiedz.co/ota/android/AisPanelApp.apk");
@@ -526,7 +546,7 @@ public class LauncherActivity extends AppCompatActivity {
             fileOutput.close();
 
             // go to the installation
-            installTheUpdate();
+            installTheUpdate(force);
 
         } catch (MalformedURLException e) {
             e.printStackTrace();
@@ -536,10 +556,64 @@ public class LauncherActivity extends AppCompatActivity {
     }
 
 
-    private void installTheUpdate() {
+    private void installTheUpdate(boolean force) {
         // install
-        appendLog("installTheUpdate");
+        appendLog("installTheUpdate " + force);
         Process p;
+
+        if (force){
+            // TODO copy the .ais dir !!!
+            // force update
+            // 1. move apk data
+            try {
+                p = Runtime.getRuntime().exec(
+                        new String[]{"su", "-c", "mv /data/data/pl.sviete.dom/files  /data/data/launcher.sviete.pl.domlauncherapp/files"}
+                );
+                p.waitFor();
+                int exitStatus = p.exitValue();
+                appendLog("installTheUpdate force " + p.exitValue());
+                // exitStatus == 0 all OK
+                if (exitStatus != 0){
+                    // exitStatus != 0 something was wrong exit
+                    return;
+                }
+                Log.i(TAG, "move apk data " + exitStatus);
+            } catch (Exception e) {
+                Log.i(TAG, "move apk data " +  e.toString());
+                e.printStackTrace();
+            }
+            // 2. uninstall dom apk
+            try {
+                p = Runtime.getRuntime().exec(
+                        new String[]{"su","-c","pm uninstall pl.sviete.dom "}
+                );
+
+                try {
+                    p.waitFor();
+                    BufferedReader stdInput = new BufferedReader(new
+                            InputStreamReader(p.getInputStream()));
+
+                    BufferedReader stdError = new BufferedReader(new
+                            InputStreamReader(p.getErrorStream()));
+                    String s = null;
+                    while ((s = stdInput.readLine()) != null) {
+                        appendLog(s);
+                    }
+                    while ((s = stdError.readLine()) != null) {
+                        appendLog(s);
+                    }
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+
+            } catch (Exception e) {
+                Log.i(TAG, "pm uninstall pl.sviete.dom " +  e.toString());
+                e.printStackTrace();
+            }
+        }
+
+        // normal installation
+
         try {
             File SDCardRoot = Environment.getExternalStorageDirectory();
             File update = new File(SDCardRoot, "AisPanelApp.apk");
@@ -566,52 +640,101 @@ public class LauncherActivity extends AppCompatActivity {
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
-
-            // 2. open the app
-            p = Runtime.getRuntime().exec(
-                    new String[]{"su","-c", "am start -n pl.sviete.dom/.WelcomeActivity"}
-                    );
-
-            try {
-                p.waitFor();
-                BufferedReader stdInput = new BufferedReader(new
-                        InputStreamReader(p.getInputStream()));
-
-                BufferedReader stdError = new BufferedReader(new
-                        InputStreamReader(p.getErrorStream()));
-                String s = null;
-                while ((s = stdInput.readLine()) != null) {
-                    appendLog(s);
-                }
-
-                while ((s = stdError.readLine()) != null) {
-                    appendLog(s);
-                }
-                if (p.exitValue() != 255) {
-                    appendLog("all done..." + p.exitValue());
-
-                }
-                else {
-                    // TODO Code to run on unsuccessful
-                    appendLog("exitValue: " + p.exitValue());
-                }
-            } catch (InterruptedException e) {
-                // TODO Code to run in interrupted exception
-                appendLog("InterruptedException: " + e.toString());
-            }
         } catch (IOException e) {
             // TODO Code to run in input/output exception
             appendLog("IOException: " + e.toString());
         }
+
+
+        if (force){
+            // force update
+            // move apk data back
+            try {
+                p = Runtime.getRuntime().exec(
+                        new String[]{"su", "-c", "mv /data/data/launcher.sviete.pl.domlauncherapp/files /data/data/pl.sviete.dom/files"}
+                );
+                p.waitFor();
+                int exitStatus = p.exitValue();
+                appendLog("installTheUpdate force " + p.exitValue());
+                // exitStatus == 0 all OK
+                if (exitStatus != 0){
+                    // exitStatus != 0 something was wrong exit
+                    return;
+                }
+                Log.i(TAG, "move apk data " + exitStatus);
+            } catch (Exception e) {
+                Log.i(TAG, "move apk data " +  e.toString());
+                e.printStackTrace();
+            }
+
+            try {
+                p = Runtime.getRuntime().exec(
+                        new String[]{"su", "-c", "chown -R `stat /data/data/pl.sviete.dom -c %u:%g` /data/data/pl.sviete.dom/files"}
+                );
+                p.waitFor();
+                int exitStatus = p.exitValue();
+                appendLog("installTheUpdate force " + p.exitValue());
+                // exitStatus == 0 all OK
+                if (exitStatus != 0){
+                    // exitStatus != 0 something was wrong exit
+                    return;
+                }
+                Log.i(TAG, "move apk data " + exitStatus);
+            } catch (Exception e) {
+                Log.i(TAG, "move apk data " +  e.toString());
+                e.printStackTrace();
+            }
+
+            // change owner
+
+        }
+
+
+        // open the app
+        try {
+            p = Runtime.getRuntime().exec(
+                    new String[]{"su","-c", "am start -n pl.sviete.dom/.WelcomeActivity"}
+            );
+                try {
+                    p.waitFor();
+                    BufferedReader stdInput = new BufferedReader(new
+                            InputStreamReader(p.getInputStream()));
+
+                    BufferedReader stdError = new BufferedReader(new
+                            InputStreamReader(p.getErrorStream()));
+                    String s = null;
+                    while ((s = stdInput.readLine()) != null) {
+                        appendLog(s);
+                    }
+
+                    while ((s = stdError.readLine()) != null) {
+                        appendLog(s);
+                    }
+                    if (p.exitValue() != 255) {
+                        appendLog("all done..." + p.exitValue());
+
+                    }
+                    else {
+                        // TODO Code to run on unsuccessful
+                        appendLog("exitValue: " + p.exitValue());
+                    }
+                } catch (InterruptedException e) {
+                    // TODO Code to run in interrupted exception
+                    appendLog("InterruptedException: " + e.toString());
+                }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
-    private void doTheUpdate(final boolean beta) {
+
+    private void doTheUpdate(final boolean beta, final boolean force) {
         appendLog("doTheUpdate");
         Thread thread = new Thread(new Runnable() {
             public void run() {
                 try {
                     // download
-                    downloadTheUpdate(beta);
+                    downloadTheUpdate(beta, force);
                 } catch (Exception e) {
                     e.printStackTrace();
                 }

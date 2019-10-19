@@ -506,10 +506,15 @@ public class LauncherActivity extends AppCompatActivity {
     private void downloadTheUpdate(boolean beta, boolean force){
         appendLog("downloadTheUpdate");
         try {
-            URL url = new URL("https://www.powiedz.co/ota/android/AisPanelApp.apk");
+            String apkBaseName = "AisPanelApp";
             if (beta) {
-                url = new URL("https://www.powiedz.co/ota/android/AisPanelApp-test.apk");
+                apkBaseName = apkBaseName + "-test";
             }
+            if (force) {
+                apkBaseName = apkBaseName + "-force";
+            }
+            URL url = new URL("https://www.powiedz.co/ota/android/" + apkBaseName + ".apk");
+
             HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
             int status = urlConnection.getResponseCode();
             appendLog("Connection status : " + status);
@@ -538,9 +543,6 @@ public class LauncherActivity extends AppCompatActivity {
             appendLog("Total size to download: " + totalSize);
             while ( (bufferLength = inputStream.read(buffer)) > 0 ) {
                 fileOutput.write(buffer, 0, bufferLength);
-                //downloadedSize += bufferLength;
-                //appendLog("Download progress, downloaded: " + downloadedSize + " from: " + totalSize);
-
             }
             //close the output stream when done
             fileOutput.close();
@@ -560,27 +562,37 @@ public class LauncherActivity extends AppCompatActivity {
         // install
         appendLog("installTheUpdate " + force);
         Process p;
+        int exitStatus = 0;
 
         if (force){
-            // TODO copy the .ais dir !!!
             // force update
-            // 1. move apk data
+            // 1. move apk data first
             try {
                 p = Runtime.getRuntime().exec(
                         new String[]{"su", "-c", "mv /data/data/pl.sviete.dom/files  /data/data/launcher.sviete.pl.domlauncherapp/files"}
                 );
                 p.waitFor();
-                int exitStatus = p.exitValue();
-                appendLog("installTheUpdate force " + p.exitValue());
+                exitStatus = p.exitValue();
+                appendLog("installTheUpdate force move files folder exitStatus " + exitStatus);
                 // exitStatus == 0 all OK
                 if (exitStatus != 0){
                     // exitStatus != 0 something was wrong exit
                     return;
                 }
-                Log.i(TAG, "move apk data " + exitStatus);
+                appendLog("installTheUpdate force move files exitStatus " + exitStatus);
+
+                // move .ais folder
+                p = Runtime.getRuntime().exec(
+                        new String[]{"su", "-c", "mv /data/data/pl.sviete.dom/.ais  /data/data/launcher.sviete.pl.domlauncherapp/.ais"}
+                );
+                p.waitFor();
+                exitStatus = p.exitValue();
+                appendLog("installTheUpdate force move .ais exitStatus " + exitStatus);
+
             } catch (Exception e) {
-                Log.i(TAG, "move apk data " +  e.toString());
+                appendLog("move apk data error " +  e.toString());
                 e.printStackTrace();
+                return;
             }
             // 2. uninstall dom apk
             try {
@@ -607,7 +619,7 @@ public class LauncherActivity extends AppCompatActivity {
                 }
 
             } catch (Exception e) {
-                Log.i(TAG, "pm uninstall pl.sviete.dom " +  e.toString());
+                appendLog("pm uninstall pl.sviete.dom " +  e.toString());
                 e.printStackTrace();
             }
         }
@@ -651,41 +663,57 @@ public class LauncherActivity extends AppCompatActivity {
             // move apk data back
             try {
                 p = Runtime.getRuntime().exec(
-                        new String[]{"su", "-c", "mv /data/data/launcher.sviete.pl.domlauncherapp/files /data/data/pl.sviete.dom/files"}
+                        new String[]{"su", "-c", "mv /data/data/launcher.sviete.pl.domlauncherapp/files /data/data/pl.sviete.dom"}
                 );
                 p.waitFor();
-                int exitStatus = p.exitValue();
-                appendLog("installTheUpdate force " + p.exitValue());
-                // exitStatus == 0 all OK
-                if (exitStatus != 0){
-                    // exitStatus != 0 something was wrong exit
-                    return;
-                }
-                Log.i(TAG, "move apk data " + exitStatus);
+                exitStatus = p.exitValue();
+                appendLog("installTheUpdate force move files folder back exitStatus " + exitStatus);
+                appendLog("move files folder data back " + exitStatus);
             } catch (Exception e) {
-                Log.i(TAG, "move apk data " +  e.toString());
+                appendLog("move files folder data back " +  e.toString());
                 e.printStackTrace();
             }
+
+            try {
+                p = Runtime.getRuntime().exec(
+                        new String[]{"su", "-c", "mv /data/data/launcher.sviete.pl.domlauncherapp/.ais /data/data/pl.sviete.dom"}
+                );
+                p.waitFor();
+                exitStatus = p.exitValue();
+                appendLog("installTheUpdate force move .ais folder back exitStatus " + exitStatus);
+            } catch (Exception e) {
+                appendLog("move .ais folder data back " +  e.toString());
+                e.printStackTrace();
+            }
+
 
             try {
                 p = Runtime.getRuntime().exec(
                         new String[]{"su", "-c", "chown -R `stat /data/data/pl.sviete.dom -c %u:%g` /data/data/pl.sviete.dom/files"}
                 );
                 p.waitFor();
-                int exitStatus = p.exitValue();
-                appendLog("installTheUpdate force " + p.exitValue());
+                exitStatus = p.exitValue();
+                appendLog("installTheUpdate force chmod filse folder " + exitStatus);
                 // exitStatus == 0 all OK
-                if (exitStatus != 0){
-                    // exitStatus != 0 something was wrong exit
-                    return;
-                }
-                Log.i(TAG, "move apk data " + exitStatus);
+                appendLog("installTheUpdate force chmod filse folder " + exitStatus);
             } catch (Exception e) {
-                Log.i(TAG, "move apk data " +  e.toString());
+                appendLog("installTheUpdate force chmod filse folder " +  e.toString());
                 e.printStackTrace();
             }
 
-            // change owner
+            try {
+                p = Runtime.getRuntime().exec(
+                        new String[]{"su", "-c", "chown -R `stat /data/data/pl.sviete.dom -c %u:%g` /data/data/pl.sviete.dom/.ais"}
+                );
+                p.waitFor();
+                exitStatus = p.exitValue();
+                appendLog("installTheUpdate force chmod .ais folder " + exitStatus);
+                // exitStatus == 0 all OK
+                appendLog("installTheUpdate force chmod .ais folder " + exitStatus);
+            } catch (Exception e) {
+                appendLog("installTheUpdate force chmod .ais folder " +  e.toString());
+                e.printStackTrace();
+            }
 
         }
 

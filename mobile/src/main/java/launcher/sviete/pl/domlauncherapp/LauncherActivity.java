@@ -31,6 +31,10 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.concurrent.TimeUnit;
 
 
 public class LauncherActivity extends AppCompatActivity {
@@ -172,7 +176,23 @@ public class LauncherActivity extends AppCompatActivity {
             // exitStatus == 0 file exists
             if (exitStatus != 0){
                 // exitStatus != 0 file not exists
-                startBrowserActivity();
+
+                // check if we have installation command
+                try {
+                    Intent intent = getIntent();
+                    // the command from AIS dom is send like
+                    // am start -n launcher.sviete.pl.domlauncherapp/.LauncherActivity -e command ais-dom-update
+                    if (intent.getStringExtra("command") != null) {
+                        appendLog("installation command " + intent.getStringExtra("command"));
+                    } else {
+                        startBrowserActivity();
+                    }
+                } catch (Exception e){
+                    e.printStackTrace();
+                    startBrowserActivity();
+                }
+
+
             }
             Log.i(TAG, "configuration.yaml " + exitStatus);
         } catch (Exception e) {
@@ -427,14 +447,21 @@ public class LauncherActivity extends AppCompatActivity {
         super.onResume();
         try {
             Intent intent = getIntent();
-            // the command from AIS dom is send like
+            // AIS dom info the command from AIS dom is send like
             // am start -n launcher.sviete.pl.domlauncherapp/.LauncherActivity -e command ais-dom-update
+            //
             if (intent.getStringExtra("command") != null) {
                 handleCommandFromAisDom(intent.getStringExtra("command"));
             }
         } catch (Exception e){
             e.printStackTrace();
         }
+    }
+
+    private String getDateTime() {
+        DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
+        Date date = new Date();
+        return dateFormat.format(date);
     }
 
 
@@ -450,9 +477,10 @@ public class LauncherActivity extends AppCompatActivity {
                 e.printStackTrace();
             }
         }
+
         try{
             BufferedWriter buf = new BufferedWriter(new FileWriter(logFile, true));
-            buf.append(text);
+            buf.append(getDateTime() + " " + text);
             buf.newLine();
             buf.close();
         }
@@ -462,7 +490,7 @@ public class LauncherActivity extends AppCompatActivity {
     }
 
     void handleCommandFromAisDom(String command) {
-        appendLog(command);
+        appendLog("handleCommandFromAisDom: " + command);
         if ("ais-dom-update".equals(command)){
             appendLog("Update ais-dom!");
             doTheUpdate(false, false);
@@ -560,7 +588,7 @@ public class LauncherActivity extends AppCompatActivity {
 
     private void installTheUpdate(boolean force) {
         // install
-        appendLog("installTheUpdate " + force);
+        appendLog("installTheUpdate force: " + force);
         Process p;
         int exitStatus = 0;
 
@@ -575,10 +603,6 @@ public class LauncherActivity extends AppCompatActivity {
                 exitStatus = p.exitValue();
                 appendLog("installTheUpdate force move files folder exitStatus " + exitStatus);
                 // exitStatus == 0 all OK
-                if (exitStatus != 0){
-                    // exitStatus != 0 something was wrong exit
-                    return;
-                }
                 appendLog("installTheUpdate force move files exitStatus " + exitStatus);
 
                 // move .ais folder
@@ -595,9 +619,84 @@ public class LauncherActivity extends AppCompatActivity {
                 return;
             }
             // 2. uninstall dom apk
+            // remove device admin
             try {
+                appendLog("remove device admin");
                 p = Runtime.getRuntime().exec(
-                        new String[]{"su","-c","pm uninstall pl.sviete.dom "}
+                        new String[]{"su","-c", "am start -n pl.sviete.dom/.WelcomeActivity -a remove-device-admin"}
+                );
+                try {
+                    p.waitFor();
+                    BufferedReader stdInput = new BufferedReader(new
+                            InputStreamReader(p.getInputStream()));
+
+                    BufferedReader stdError = new BufferedReader(new
+                            InputStreamReader(p.getErrorStream()));
+                    String s = null;
+                    while ((s = stdInput.readLine()) != null) {
+                        appendLog(s);
+                    }
+
+                    while ((s = stdError.readLine()) != null) {
+                        appendLog(s);
+                    }
+                    if (p.exitValue() != 255) {
+                        appendLog("remove-device-admin all done..." + p.exitValue());
+
+                    }
+                    else {
+                        // TODO Code to run on unsuccessful
+                        appendLog("remove-device-admin exitValue: " + p.exitValue());
+                    }
+                } catch (InterruptedException e) {
+                    // TODO Code to run in interrupted exception
+                    appendLog("remove-device-admin InterruptedException: " + e.toString());
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+            try {
+                appendLog("pm clear pl.sviete.dom");
+                p = Runtime.getRuntime().exec(
+                        new String[]{"su","-c","pm clear pl.sviete.dom"}
+                );
+
+                try {
+                    p.waitFor();
+                    BufferedReader stdInput = new BufferedReader(new
+                            InputStreamReader(p.getInputStream()));
+
+                    BufferedReader stdError = new BufferedReader(new
+                            InputStreamReader(p.getErrorStream()));
+                    String s = null;
+                    while ((s = stdInput.readLine()) != null) {
+                        appendLog(s);
+                    }
+                    while ((s = stdError.readLine()) != null) {
+                        appendLog(s);
+                    }
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+
+            } catch (Exception e) {
+                appendLog("pm clear pl.sviete.dom " +  e.toString());
+                e.printStackTrace();
+            }
+
+
+            try {
+                appendLog("wait 5 seconds");
+                TimeUnit.SECONDS.sleep(5);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+
+            try {
+                appendLog("pm uninstall pl.sviete.dom");
+                p = Runtime.getRuntime().exec(
+                        new String[]{"su","-c","pm uninstall pl.sviete.dom"}
                 );
 
                 try {
@@ -622,18 +721,66 @@ public class LauncherActivity extends AppCompatActivity {
                 appendLog("pm uninstall pl.sviete.dom " +  e.toString());
                 e.printStackTrace();
             }
+
+            try {
+                appendLog("wait 5 seconds");
+                TimeUnit.SECONDS.sleep(5);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+
+            try {
+                // create new install session
+                appendLog("pm install-create session");
+                p = Runtime.getRuntime().exec(
+                        new String[]{"su","-c","pm install-create"}
+                );
+
+                try {
+                    p.waitFor();
+                    BufferedReader stdInput = new BufferedReader(new
+                            InputStreamReader(p.getInputStream()));
+
+                    BufferedReader stdError = new BufferedReader(new
+                            InputStreamReader(p.getErrorStream()));
+                    String s = null;
+                    while ((s = stdInput.readLine()) != null) {
+                        appendLog(s);
+                    }
+                    while ((s = stdError.readLine()) != null) {
+                        appendLog(s);
+                    }
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+
+            } catch (Exception e) {
+                appendLog("pm install-create " +  e.toString());
+                e.printStackTrace();
+            }
+
+
+
         }
 
-        // normal installation
 
+
+        // do the normal installation
         try {
             File SDCardRoot = Environment.getExternalStorageDirectory();
             File update = new File(SDCardRoot, "AisPanelApp.apk");
 
             // run the app updates
-            p = Runtime.getRuntime().exec(
-                    new String[]{"su","-c","pm install -r " +  update.getAbsolutePath()}
-                    );
+            if (force) {
+                appendLog("pm install " + update.getAbsolutePath());
+                p = Runtime.getRuntime().exec(
+                        new String[]{"su", "-c", "pm install -gf /sdcard/AisPanelApp.apk"}
+                );
+            } else {
+                p = Runtime.getRuntime().exec(
+                        new String[]{"su", "-c", "pm install -r " + update.getAbsolutePath()}
+                );
+            }
 
             try {
                 p.waitFor();
@@ -663,7 +810,7 @@ public class LauncherActivity extends AppCompatActivity {
             // move apk data back
             try {
                 p = Runtime.getRuntime().exec(
-                        new String[]{"su", "-c", "mv /data/data/launcher.sviete.pl.domlauncherapp/files /data/data/pl.sviete.dom"}
+                        new String[]{"su", "-c", "mv /data/data/launcher.sviete.pl.domlauncherapp/files /data/data/pl.sviete.dom/files"}
                 );
                 p.waitFor();
                 exitStatus = p.exitValue();
@@ -676,7 +823,7 @@ public class LauncherActivity extends AppCompatActivity {
 
             try {
                 p = Runtime.getRuntime().exec(
-                        new String[]{"su", "-c", "mv /data/data/launcher.sviete.pl.domlauncherapp/.ais /data/data/pl.sviete.dom"}
+                        new String[]{"su", "-c", "mv /data/data/launcher.sviete.pl.domlauncherapp/.ais /data/data/pl.sviete.dom/.ais"}
                 );
                 p.waitFor();
                 exitStatus = p.exitValue();
@@ -693,9 +840,8 @@ public class LauncherActivity extends AppCompatActivity {
                 );
                 p.waitFor();
                 exitStatus = p.exitValue();
-                appendLog("installTheUpdate force chmod filse folder " + exitStatus);
+                appendLog("installTheUpdate force chmod files folder " + exitStatus);
                 // exitStatus == 0 all OK
-                appendLog("installTheUpdate force chmod filse folder " + exitStatus);
             } catch (Exception e) {
                 appendLog("installTheUpdate force chmod filse folder " +  e.toString());
                 e.printStackTrace();
@@ -757,7 +903,14 @@ public class LauncherActivity extends AppCompatActivity {
 
 
     private void doTheUpdate(final boolean beta, final boolean force) {
+        appendLog("");
+        appendLog("");
+        appendLog("-----------------------------");
+        appendLog("-----------------------------");
         appendLog("doTheUpdate");
+        appendLog("-----------------------------");
+        appendLog("-----------------------------");
+
         Thread thread = new Thread(new Runnable() {
             public void run() {
                 try {

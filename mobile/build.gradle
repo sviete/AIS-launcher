@@ -6,8 +6,8 @@ android {
         applicationId "launcher.sviete.pl.domlauncherapp"
         minSdkVersion 15
         targetSdkVersion 28
-        versionCode 39
-        versionName "1.0.0"
+        versionCode 40
+        versionName "1.0.1"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
     }
     buildTypes {

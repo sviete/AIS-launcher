@@ -114,7 +114,7 @@ public class LauncherActivity extends AppCompatActivity {
 
                 if (isPermissionGranted(Manifest.permission.WRITE_EXTERNAL_STORAGE)){
                     // if we have permission than the files should be on sdcard and we should be able to start the app
-                    startBrowserActivity();
+                    startSettingsActivity();
                 } else {
                     appendLog("ask for the permission to write on sdcard...");
                     askForPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE, WRITE_EXTERNAL);
@@ -185,11 +185,11 @@ public class LauncherActivity extends AppCompatActivity {
                     if (intent.getStringExtra("command") != null) {
                         appendLog("installation command " + intent.getStringExtra("command"));
                     } else {
-                        startBrowserActivity();
+                        startSettingsActivity();
                     }
                 } catch (Exception e){
                     e.printStackTrace();
-                    startBrowserActivity();
+                    startSettingsActivity();
                 }
 
 
@@ -228,21 +228,6 @@ public class LauncherActivity extends AppCompatActivity {
         }
 
     }
-
-    private void startBrowserActivity() {
-        Log.d(TAG, "startSettingsActivity Called");
-        try{
-            Intent intent = new Intent(Intent.ACTION_MAIN);
-            intent.setComponent(new ComponentName("pl.sviete.dom","pl.sviete.dom.BrowserActivityNative"));
-            startActivity(intent);
-            finish();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-    }
-
-
 
     private void startFilesActivity() {
         Log.d(TAG, "startFilesActivity Called");

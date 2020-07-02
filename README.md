@@ -12,7 +12,7 @@ you can install it on Google Play https://play.google.com/store/apps/details?id=
 
 
 ## INFO
-* version 1.0.0 was signed by Google Play key,
-* version 1.0.1 is signed locally using the ais-dom-keystore.jks this version is included on box from day 01.07.2020
+* version 1.0.1 was signed by Google Play key,
+* version 1.0.2 is signed locally using the ais-dom-keystore.jks this version is included on box from day 01.07.2020
 
 ### to upgrade from 1.0.0 you need to uninstall and install again!

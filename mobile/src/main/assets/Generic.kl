@@ -45,8 +45,6 @@ key 22    U
 key 23    I
 key 24    O
 key 25    P
-key 26    LEFT_BRACKET
-key 27    RIGHT_BRACKET
 key 28    DPAD_CENTER
 key 29    CTRL_LEFT
 key 30    A
@@ -137,7 +135,6 @@ key 114   VOLUME_DOWN
 key 115   VOLUME_UP
 key 117   NUMPAD_EQUALS
 # key 118 "KEY_KPPLUSMINUS"
-key 119   BREAK
 # key 120 (undefined)
 key 121   NUMPAD_COMMA
 key 122   KANA
@@ -186,7 +183,6 @@ key 165   MEDIA_PREVIOUS
 key 166   MEDIA_STOP
 key 167   MEDIA_RECORD
 key 168   MEDIA_REWIND
-key 169   CALL
 # key 170 "KEY_ISO"
 key 171   MUSIC
 # key 173 "KEY_REFRESH"
@@ -246,29 +242,33 @@ key 225   BRIGHTNESS_UP
 ################
 # AIS-DOM start#
 ################
-# orginal records
+# commented records
 # key 116   POWER
 # key 152   POWER
 # key 172   HOME
+# key 26    LEFT_BRACKET
+key 27    RIGHT_BRACKET
+key 119   BREAK
+key 169   CALL
+key 377   TV
 #
 # new records
-key 116   BUTTON_1
-key 152   BUTTON_2
-key 172   BUTTON_3
-# this is new - check this
-key 226   LEFT_BRACKET
+key 116   BREAK
+key 152   BREAK
+key 172   TV
+key 226   CALL
+key 26    CALL
 #
 # commented records
-# key 256   BUTTON_1
-# key 257   BUTTON_2
-# key 258   BUTTON_3
 # key 226   HEADSETHOOK
 #for xiaomi bt remote
 #key usage 0x07004a HOME
 ################
 # AIS-DOM stop #
 ################
-
+key 256   BUTTON_1
+key 257   BUTTON_2
+key 258   BUTTON_3
 key 259   BUTTON_4
 key 260   BUTTON_5
 key 261   BUTTON_6
@@ -344,7 +344,6 @@ key 366   DVR
 # key 374 "KEY_KEYBOARD"
 # key 375 "KEY_SCREEN"
 # key 376 "KEY_PC"
-key 377   TV
 # key 378 "KEY_TV2"
 # key 379 "KEY_VCR"
 # key 380 "KEY_VCR2"

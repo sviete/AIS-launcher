@@ -498,6 +498,7 @@ public class LauncherActivity extends AppCompatActivity {
 
 
         if ("ais-dom-root-installation".equals(command)){
+            // this is not used ... but maybe someday
             appendLog("Root installation TODO - to change the logo or key layout etc!");
             rootInstallation();
         }

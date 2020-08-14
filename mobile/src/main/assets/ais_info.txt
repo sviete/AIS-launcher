@@ -1,0 +1,48 @@
+# to edit keylayout
+mount -o rw,remount,rw /system
+vi /system/usr/keylayout/Generic.kl
+
+
+# Showing live events
+getevent -lt
+
+# how to click the ESC button - AIS POWER!
+# key 119   BREAK
+sendevent /dev/input/event5 1 119 1
+sendevent /dev/input/event5 0 0 0
+sendevent /dev/input/event5 1 119 0
+sendevent /dev/input/event5 0 0 0
+echo ok
+
+# how to click the MIC button - AIS MIC!
+# key 169   CALL
+sendevent /dev/input/event5 1 169 1
+sendevent /dev/input/event5 0 0 0
+sendevent /dev/input/event5 1 169 0
+sendevent /dev/input/event5 0 0 0
+echo ok
+
+# how to click the HOME button - AIS HOME / PLAYER!
+# key 377   TV
+sendevent /dev/input/event5 1 377 1
+sendevent /dev/input/event5 0 0 0
+sendevent /dev/input/event5 1 377 0
+sendevent /dev/input/event5 0 0 0
+echo ok
+
+
+# TODO
+# key 111   FORWARD_DEL
+sendevent /dev/input/event5 1 111 1
+sendevent /dev/input/event5 0 0 0
+sendevent /dev/input/event5 1 111 0
+sendevent /dev/input/event5 0 0 0
+echo ok
+
+# key 159   FORWARD
+sendevent /dev/input/event5 1 159 1
+sendevent /dev/input/event5 0 0 0
+sendevent /dev/input/event5 1 159 0
+sendevent /dev/input/event5 0 0 0
+echo ok
+

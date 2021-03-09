@@ -14,9 +14,9 @@
         android:layout_gravity="top|left"
         android:src="@drawable/ic_launcher_folder"
         android:focusable="true"
-        android:nextFocusDown="@+id/dom_terminal"
         android:nextFocusLeft="@+id/tv_settings"
         android:nextFocusRight="@+id/tv_settings"
+        android:nextFocusDown="@+id/dom_terminal"
         android:nextFocusUp="@+id/dom_terminal"/>
 
     <ImageView
@@ -25,24 +25,25 @@
         android:layout_height="40dp"
         android:layout_gravity="top|right"
         android:focusable="true"
-        android:nextFocusDown="@+id/dom_settings"
         android:nextFocusLeft="@+id/dom_files"
         android:nextFocusRight="@+id/dom_files"
-        android:nextFocusUp="@+id/dom_settings"
+        android:nextFocusDown="@+id/fullscreen_content"
+        android:nextFocusUp="@+id/fullscreen_content"
         android:src="@drawable/ic_launcher_tv" />
-
 
     <ImageView
         android:id="@+id/fullscreen_content"
         android:layout_width="340dp"
         android:layout_height="344dp"
         android:layout_gravity="bottom|right"
+        android:layout_marginEnd="30dp"
+        android:layout_marginRight="30dp"
         android:focusable="true"
-        android:nextFocusLeft="@+id/fullscreen_content"
+        android:nextFocusLeft="@+id/dom_terminal"
         android:nextFocusRight="@+id/dom_terminal"
         android:nextFocusUp="@+id/tv_settings"
-        android:nextFocusDown="@+id/fullscreen_content"
-        android:src="@drawable/click_to_start" />
+        android:nextFocusDown="@+id/tv_settings"
+        android:src="@drawable/click_to_start_ais" />
 
     <ImageView
         android:id="@+id/dom_terminal"
@@ -50,9 +51,9 @@
         android:layout_height="40dp"
         android:layout_gravity="bottom|left"
         android:focusable="true"
-        android:nextFocusDown="@+id/dom_settings"
-        android:nextFocusLeft="@+id/dom_settings"
+        android:nextFocusLeft="@+id/fullscreen_content"
         android:nextFocusRight="@+id/fullscreen_content"
+        android:nextFocusDown="@+id/dom_files"
         android:nextFocusUp="@+id/dom_files"
         android:src="@drawable/ic_launcher_console" />
 

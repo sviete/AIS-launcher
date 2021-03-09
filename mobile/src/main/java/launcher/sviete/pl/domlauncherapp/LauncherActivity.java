@@ -5,7 +5,6 @@ import android.annotation.SuppressLint;
 import android.content.ComponentName;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.content.res.AssetManager;
 import android.os.Environment;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
@@ -22,7 +21,6 @@ import android.widget.ImageView;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -71,7 +69,6 @@ public class LauncherActivity extends AppCompatActivity {
         mContentView = findViewById(R.id.fullscreen_content);
         ImageView imgAisDom = (ImageView) findViewById(R.id.fullscreen_content);
         ImageView imgAisDomTerminal = (ImageView) findViewById(R.id.dom_terminal);
-        ImageView imgAisDomSettings = (ImageView) findViewById(R.id.dom_settings);
         ImageView imgAisDomFiles = (ImageView) findViewById(R.id.dom_files);
         ImageView imgTvSettings = (ImageView) findViewById(R.id.tv_settings);
 
@@ -111,10 +108,9 @@ public class LauncherActivity extends AppCompatActivity {
         imgAisDom.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-
                 if (isPermissionGranted(Manifest.permission.WRITE_EXTERNAL_STORAGE)){
                     // if we have permission than the files should be on sdcard and we should be able to start the app
-                    startSettingsActivity();
+                    startDomActivity();
                 } else {
                     appendLog("ask for the permission to write on sdcard...");
                     askForPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE, WRITE_EXTERNAL);
@@ -131,13 +127,6 @@ public class LauncherActivity extends AppCompatActivity {
 
         });
 
-        imgAisDomSettings.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                startSettingsActivity();
-            }
-
-        });
 
         imgAisDomFiles.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -185,11 +174,11 @@ public class LauncherActivity extends AppCompatActivity {
                     if (intent.getStringExtra("command") != null) {
                         appendLog("installation command " + intent.getStringExtra("command"));
                     } else {
-                        startSettingsActivity();
+                        startDomActivity();
                     }
                 } catch (Exception e){
                     e.printStackTrace();
-                    startSettingsActivity();
+                    startDomActivity();
                 }
 
 
@@ -216,11 +205,11 @@ public class LauncherActivity extends AppCompatActivity {
 
     }
 
-    private void startSettingsActivity() {
-        Log.d(TAG, "startSettingsActivity Called");
+    private void startDomActivity() {
+        Log.d(TAG, "startDomActivity Called");
         try{
             Intent intent = new Intent(Intent.ACTION_MAIN);
-            intent.setComponent(new ComponentName("pl.sviete.dom","pl.sviete.dom.WelcomeActivity"));
+            intent.setComponent(new ComponentName("pl.sviete.dom","pl.sviete.dom.SplashScreenActivityMenu"));
             startActivity(intent);
             finish();
         } catch (Exception e) {
@@ -261,127 +250,11 @@ public class LauncherActivity extends AppCompatActivity {
         switch (requestCode) {
             case WRITE_EXTERNAL: {
                 // If request is cancelled, the result arrays are empty.
-                if (grantResults.length > 0
-                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    try{
-                        //copy file to app folder
-                        appendLog("copyFileToSdCard ...");
-                        copyFileToSdCard("files.tar.7z");
-                        appendLog("wait 1 second...");
-                        Handler handler = new Handler();
-                        handler.postDelayed(new Runnable() {
-                            public void run() {
-                                appendLog("startConsoleActivity");
-                                startConsoleActivity();
-                            }
-                        }, 1000);   //1 seconds
-
-                    } catch (Exception e){
-                        e.printStackTrace();
-                    }
+                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    startDomActivity();
                 }
             }
-
         }
-    }
-
-    private void rootInstallation(){
-        appendLog("Checking the permissions...");
-        askForPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE, WRITE_EXTERNAL);
-        appendLog("copy the bootanimation...");
-        copyFileToSdCard("bootanimation.zip");
-        appendLog("copy the keylayout...");
-        copyFileToSdCard("Generic.kl");
-//        appendLog("copy the pl-pl_2.zip...");
-//        copyFileToSdCard("pl-pl_2.zip");
-        appendLog("execute the run_as_root...");
-        copyScriptToApp("run_as_root.sh");
-        runScript("run_as_root.sh");
-    }
-
-    private void runScript(String file){
-        //
-        String pathFull = "/data/data/launcher.sviete.pl.domlauncherapp/" + file;
-        Process p;
-        appendLog("runScript: " + file);
-        try {
-            p = Runtime.getRuntime().exec(
-                    new String[]{"su", "-c", pathFull}
-            );
-            try {
-                p.waitFor();
-            } catch (InterruptedException e) {
-                appendLog(e.getMessage());
-            }
-            BufferedReader stdInput = new BufferedReader(new
-                    InputStreamReader(p.getInputStream()));
-
-            BufferedReader stdError = new BufferedReader(new
-                    InputStreamReader(p.getErrorStream()));
-            String s = null;
-            while ((s = stdInput.readLine()) != null) {
-                appendLog(s);
-            }
-            while ((s = stdError.readLine()) != null) {
-                appendLog(s);
-            }
-        }  catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private void copyScriptToApp(String sourceName){
-        String pathFull = "/data/data/launcher.sviete.pl.domlauncherapp/" + sourceName;
-        AssetManager assetManager = getAssets();
-        try{
-            InputStream in = assetManager.open(sourceName);
-            FileOutputStream out = null;
-            out = new FileOutputStream(pathFull);
-            byte[] buff = new byte[1024];
-            int read = 0;
-            try {
-                while ((read = in.read(buff)) > 0) {
-                    out.write(buff, 0, read);
-                }
-            } finally {
-                in.close();
-                out.close();
-            }
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        File script = new File(pathFull);
-        script.setExecutable(true, false);
-    }
-
-
-    private void copyFileToSdCard(String sourceName){
-        AssetManager assetManager = getAssets();
-        File SDCardRoot = Environment.getExternalStorageDirectory();
-        File file = new File(SDCardRoot, sourceName);
-
-        try{
-            InputStream in = assetManager.open(sourceName);
-            FileOutputStream out = null;
-            out = new FileOutputStream(file);
-            byte[] buff = new byte[1024];
-            int read = 0;
-            try {
-                while ((read = in.read(buff)) > 0) {
-                    out.write(buff, 0, read);
-                }
-            } finally {
-                in.close();
-                out.close();
-            }
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
     }
 
     @Override
@@ -496,12 +369,6 @@ public class LauncherActivity extends AppCompatActivity {
             doTheUpdate(true, true);
         }
 
-
-        if ("ais-dom-root-installation".equals(command)){
-            // this is not used ... but maybe someday
-            appendLog("Root installation TODO - to change the logo or key layout etc!");
-            rootInstallation();
-        }
     }
 
 

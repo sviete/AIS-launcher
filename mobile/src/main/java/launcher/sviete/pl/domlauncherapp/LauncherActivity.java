@@ -207,31 +207,6 @@ public class LauncherActivity extends AppCompatActivity {
 
     private void startDomActivity() {
         Log.d(TAG, "startDomActivity Called");
-        // first run mode - start the AisSkySetupWizard only on first run
-        try {
-            File file = new File(getApplication().getFilesDir(),"ais_setup_wizard_done");
-            if(!file.exists()){
-                // 1. create file
-                file.createNewFile();
-                Log.i("AIS", "Create file aisSkySetupWizardLaunchIntent: " + file.getAbsolutePath());
-
-                // 2 . start the aisSkySetupWizardLaunchIntent
-                Intent aisSkySetupWizardLaunchIntent = getApplicationContext().getPackageManager().getLaunchIntentForPackage("com.mbx.settingsmbox");
-                if (aisSkySetupWizardLaunchIntent != null) {
-                    // only if "com.mbx.settingsmbox" exists
-                    getApplicationContext().startActivity(aisSkySetupWizardLaunchIntent);
-                    aisSkySetupWizardLaunchIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-                    Log.i("AIS", "StartActivity aisSkySetupWizardLaunchIntent");
-                    return;
-                } else {
-                    Log.i("AIS", "No activity aisSkySetupWizardLaunchIntent");
-                }
-            }
-        } catch (Exception e) {
-            Log.e("AIS", "Exception aisSkySetupWizardLaunchIntent " + e.toString());
-        }
-
-
         try{
             Intent intent = new Intent(Intent.ACTION_MAIN);
             intent.setComponent(new ComponentName("pl.sviete.dom","pl.sviete.dom.SplashScreenActivityMenu"));

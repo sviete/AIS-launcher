@@ -40,6 +40,7 @@ public class LauncherActivity extends AppCompatActivity {
     private final Handler mHideHandler = new Handler();
     private final Handler mClickHandler = new Handler();
     private View mContentView;
+    static private int mClickNo = 0;
     private final Runnable mHidePart2Runnable = new Runnable() {
         @SuppressLint("InlinedApi")
         @Override
@@ -154,38 +155,15 @@ public class LauncherActivity extends AppCompatActivity {
             Log.e(TAG, e.toString());
         }
 
-
-        // trying to check if file exists or not
+        // check if we have installation command
         try {
-            Process p = Runtime.getRuntime().exec(
-                    new String[]{"su", "-c", "ls /data/data/pl.sviete.dom/files/home/AIS/configuration.yaml"}
-            );
-            p.waitFor();
-            int exitStatus = p.exitValue();
-            // exitStatus == 0 file exists
-            if (exitStatus != 0){
-                // exitStatus != 0 file not exists
-
-                // check if we have installation command
-                try {
-                    Intent intent = getIntent();
-                    // the command from AIS dom is send like
-                    // am start -n launcher.sviete.pl.domlauncherapp/.LauncherActivity -e command ais-dom-update
-                    if (intent.getStringExtra("command") != null) {
-                        appendLog("installation command " + intent.getStringExtra("command"));
-                    } else {
-                        startDomActivity();
-                    }
-                } catch (Exception e){
-                    e.printStackTrace();
-                    startDomActivity();
-                }
-
-
+            Intent intent = getIntent();
+            // the command from AIS dom is send like
+            // am start -n launcher.sviete.pl.domlauncherapp/.LauncherActivity -e command ais-dom-update
+            if (intent.getStringExtra("command") != null) {
+                appendLog("installation command " + intent.getStringExtra("command"));
             }
-            Log.i(TAG, "configuration.yaml " + exitStatus);
-        } catch (Exception e) {
-            Log.i(TAG, "configuration.yaml " +  e.toString());
+        } catch (Exception e){
             e.printStackTrace();
         }
 
@@ -207,6 +185,38 @@ public class LauncherActivity extends AppCompatActivity {
 
     private void startDomActivity() {
         Log.d(TAG, "startDomActivity Called");
+        // trying to check if ais_setup_wizard_done file exists or not
+        if (mClickNo < 3) {
+            mClickNo = mClickNo + 1;
+            try {
+                Process p = Runtime.getRuntime().exec(
+                        new String[]{"su", "-c", "ls /data/data/pl.sviete.dom/ais_setup_wizard_done"}
+                );
+                p.waitFor();
+                int exitStatus = p.exitValue();
+                // exitStatus == 0 file exists
+                if (exitStatus != 0) {
+                    // check if we have the sky setup app
+                    Intent aisSkySetupWizardLaunchIntent = getApplicationContext().getPackageManager().getLaunchIntentForPackage("com.mbx.settingsmbox");
+                    if (aisSkySetupWizardLaunchIntent != null) {
+                        // if "com.mbx.settingsmbox" exists and we don't have a mark file
+                        getApplicationContext().startActivity(aisSkySetupWizardLaunchIntent);
+                        aisSkySetupWizardLaunchIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                        Log.i("AIS", "BroadcastReceiver StartActivity aisSkySetupWizardLaunchIntent");
+                        // count clicks
+                        mClickNo = mClickNo + 1;
+                        return;
+                    } else {
+                        Log.i("AIS", "BroadcastReceiver no activity aisSkySetupWizardLaunchIntent");
+                    }
+                }
+                Log.i(TAG, "ais_setup_wizard_done " + exitStatus);
+            } catch (Exception e) {
+                Log.i(TAG, "ais_setup_wizard_done " + e.toString());
+                e.printStackTrace();
+            }
+        }
+
         try{
             Intent intent = new Intent(Intent.ACTION_MAIN);
             intent.setComponent(new ComponentName("pl.sviete.dom","pl.sviete.dom.SplashScreenActivityMenu"));
@@ -314,6 +324,16 @@ public class LauncherActivity extends AppCompatActivity {
         } catch (Exception e){
             e.printStackTrace();
         }
+
+        //
+        try {
+            ImageView imgAisDom = (ImageView) findViewById(R.id.fullscreen_content);
+            imgAisDom.requestFocus();
+            imgAisDom.requestFocusFromTouch();
+        } catch (Exception e){
+            e.printStackTrace();
+        }
+
     }
 
     private String getDateTime() {

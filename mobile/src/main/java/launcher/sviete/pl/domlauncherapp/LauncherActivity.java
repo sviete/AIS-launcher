@@ -186,8 +186,8 @@ public class LauncherActivity extends AppCompatActivity {
     private void startDomActivity() {
         Log.d(TAG, "startDomActivity Called");
         // trying to check if ais_setup_wizard_done file exists or not
-        if (mClickNo < 3) {
-            mClickNo = mClickNo + 1;
+        if (mClickNo < 1) {
+            mClickNo = 1;
             try {
                 Process p = Runtime.getRuntime().exec(
                         new String[]{"su", "-c", "ls /data/data/pl.sviete.dom/ais_setup_wizard_done"}
@@ -203,8 +203,6 @@ public class LauncherActivity extends AppCompatActivity {
                         getApplicationContext().startActivity(aisSkySetupWizardLaunchIntent);
                         aisSkySetupWizardLaunchIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
                         Log.i("AIS", "BroadcastReceiver StartActivity aisSkySetupWizardLaunchIntent");
-                        // count clicks
-                        mClickNo = mClickNo + 1;
                         return;
                     } else {
                         Log.i("AIS", "BroadcastReceiver no activity aisSkySetupWizardLaunchIntent");

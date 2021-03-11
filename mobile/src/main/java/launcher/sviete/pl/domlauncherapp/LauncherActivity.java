@@ -111,6 +111,7 @@ public class LauncherActivity extends AppCompatActivity {
             public void onClick(View v) {
                 if (isPermissionGranted(Manifest.permission.WRITE_EXTERNAL_STORAGE)){
                     // if we have permission than the files should be on sdcard and we should be able to start the app
+                    mClickNo = mClickNo + 1;
                     startDomActivity();
                 } else {
                     appendLog("ask for the permission to write on sdcard...");
@@ -155,15 +156,35 @@ public class LauncherActivity extends AppCompatActivity {
             Log.e(TAG, e.toString());
         }
 
-        // check if we have installation command
+        // trying to check if file exists or not
         try {
-            Intent intent = getIntent();
-            // the command from AIS dom is send like
-            // am start -n launcher.sviete.pl.domlauncherapp/.LauncherActivity -e command ais-dom-update
-            if (intent.getStringExtra("command") != null) {
-                appendLog("installation command " + intent.getStringExtra("command"));
+            Process p = Runtime.getRuntime().exec(
+                    new String[]{"su", "-c", "ls /data/data/pl.sviete.dom/files/home/AIS/configuration.yaml"}
+            );
+            p.waitFor();
+            int exitStatus = p.exitValue();
+            // exitStatus == 0 file exists
+            if (exitStatus != 0){
+                // exitStatus != 0 file not exists
+
+                // check if we have installation command
+                try {
+                    Intent intent = getIntent();
+                    // the command from AIS dom is send like
+                    // am start -n launcher.sviete.pl.domlauncherapp/.LauncherActivity -e command ais-dom-update
+                    if (intent.getStringExtra("command") != null) {
+                        appendLog("installation command " + intent.getStringExtra("command"));
+                    } else {
+                        startDomActivity();
+                    }
+                } catch (Exception e){
+                    e.printStackTrace();
+                    startDomActivity();
+                }
             }
-        } catch (Exception e){
+            Log.i(TAG, "configuration.yaml " + exitStatus);
+        } catch (Exception e) {
+            Log.i(TAG, "configuration.yaml " +  e.toString());
             e.printStackTrace();
         }
 
@@ -186,8 +207,7 @@ public class LauncherActivity extends AppCompatActivity {
     private void startDomActivity() {
         Log.d(TAG, "startDomActivity Called");
         // trying to check if ais_setup_wizard_done file exists or not
-        if (mClickNo < 1) {
-            mClickNo = 1;
+        if (mClickNo == 0) {
             try {
                 Process p = Runtime.getRuntime().exec(
                         new String[]{"su", "-c", "ls /data/data/pl.sviete.dom/ais_setup_wizard_done"}

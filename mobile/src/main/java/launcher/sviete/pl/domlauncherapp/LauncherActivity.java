@@ -4,6 +4,7 @@ import android.Manifest;
 import android.annotation.SuppressLint;
 import android.content.ComponentName;
 import android.content.Intent;
+import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.os.Environment;
 import android.support.annotation.NonNull;
@@ -231,6 +232,22 @@ public class LauncherActivity extends AppCompatActivity {
                 Log.i(TAG, "ais_setup_wizard_done " + exitStatus);
             } catch (Exception e) {
                 Log.i(TAG, "ais_setup_wizard_done " + e.toString());
+                e.printStackTrace();
+            }
+
+            // disable settingsmbox app if enabled - this must be done form system app
+            try {
+                ApplicationInfo ai = getApplicationContext().getPackageManager().getApplicationInfo("com.mbx.settingsmbox", 0);
+                if (ai.enabled) {
+                    Process p = Runtime.getRuntime().exec(
+                            new String[]{"su", "-c", "pm disable com.mbx.settingsmbox"}
+                    );
+                    p.waitFor();
+                    int exitStatus = p.exitValue();
+                    Log.i(TAG, "disable the com.mbx.settingsmbox exitStatus: " + exitStatus);
+                }
+            } catch (Exception e) {
+                Log.i(TAG, "pm disable " + e.toString());
                 e.printStackTrace();
             }
         }

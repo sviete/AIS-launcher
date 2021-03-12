@@ -63,7 +63,6 @@ public class LauncherActivity extends AppCompatActivity {
         }
     };
     private static final int WRITE_EXTERNAL = 0x1;
-    boolean doubleClick = false;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -255,6 +254,7 @@ public class LauncherActivity extends AppCompatActivity {
         try{
             Intent intent = new Intent(Intent.ACTION_MAIN);
             intent.setComponent(new ComponentName("pl.sviete.dom","pl.sviete.dom.SplashScreenActivityMenu"));
+            intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
             startActivity(intent);
             finish();
         } catch (Exception e) {

@@ -233,22 +233,6 @@ public class LauncherActivity extends AppCompatActivity {
                 Log.i(TAG, "ais_setup_wizard_done " + e.toString());
                 e.printStackTrace();
             }
-
-            // disable settingsmbox app if enabled - this must be done form system app
-            try {
-                ApplicationInfo ai = getApplicationContext().getPackageManager().getApplicationInfo("com.mbx.settingsmbox", 0);
-                if (ai.enabled) {
-                    Process p = Runtime.getRuntime().exec(
-                            new String[]{"su", "-c", "pm disable com.mbx.settingsmbox"}
-                    );
-                    p.waitFor();
-                    int exitStatus = p.exitValue();
-                    Log.i(TAG, "disable the com.mbx.settingsmbox exitStatus: " + exitStatus);
-                }
-            } catch (Exception e) {
-                Log.i(TAG, "pm disable " + e.toString());
-                e.printStackTrace();
-            }
         }
 
         try{

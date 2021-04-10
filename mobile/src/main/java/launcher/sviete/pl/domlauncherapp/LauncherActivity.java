@@ -4,10 +4,12 @@ import android.Manifest;
 import android.annotation.SuppressLint;
 import android.content.ComponentName;
 import android.content.Intent;
-import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
+import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Environment;
 import android.support.annotation.NonNull;
+import android.support.annotation.RequiresApi;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.ActionBar;
@@ -19,6 +21,9 @@ import android.util.Log;
 import android.view.View;
 import android.widget.ImageView;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -27,12 +32,17 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.net.HttpURLConnection;
+import java.net.InetAddress;
 import java.net.MalformedURLException;
+import java.net.NetworkInterface;
 import java.net.URL;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.Collections;
 import java.util.Date;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 
@@ -156,17 +166,15 @@ public class LauncherActivity extends AppCompatActivity {
             Log.e(TAG, e.toString());
         }
 
-        // trying to check if file exists or not
+        // trying to check if configuration file exists or not
         try {
             Process p = Runtime.getRuntime().exec(
                     new String[]{"su", "-c", "ls /data/data/pl.sviete.dom/files/home/AIS/configuration.yaml"}
             );
             p.waitFor();
             int exitStatus = p.exitValue();
-            // exitStatus == 0 file exists
             if (exitStatus != 0){
-                // exitStatus != 0 file not exists
-
+                // exitStatus != 0 file NOT exists - first run or reset to default...
                 // check if we have installation command
                 try {
                     Intent intent = getIntent();
@@ -175,6 +183,10 @@ public class LauncherActivity extends AppCompatActivity {
                     if (intent.getStringExtra("command") != null) {
                         appendLog("installation command " + intent.getStringExtra("command"));
                     } else {
+                        // this is the first start of the gate - register the new random gate_id in ais to generate welcome letter
+                        final CallAisAPI registerAppTask = new CallAisAPI();
+                        registerAppTask.execute();
+                        //
                         startDomActivity();
                     }
                 } catch (Exception e){
@@ -814,5 +826,118 @@ public class LauncherActivity extends AppCompatActivity {
             }
         });
         thread.start();
+    }
+}
+
+class CallAisAPI extends AsyncTask<String, String, String> {
+
+    public CallAisAPI() {
+        //set context variables if required
+    }
+
+    public static String getSecureAndroidIdRoot() {
+        String gateId = "dom-x";
+        try {
+            Process p = Runtime.getRuntime().exec(
+                    new String[]{"su","-c", "settings get secure android_id"}
+            );
+            p.waitFor();
+            BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(p.getInputStream()));
+            StringBuilder android_id_text = new StringBuilder();
+            String line;
+            while ((line = bufferedReader.readLine()) != null) {
+                android_id_text.append(line);
+            }
+            gateId = "dom-" + android_id_text.toString().trim();
+
+        } catch (Exception e) {
+            Log.e("AIS", "getSecureAndroidIdRoot " + e.getMessage());
+        }
+        return gateId;
+    }
+
+    public static String getIPAddress(boolean useIPv4) {
+        try {
+            List<NetworkInterface> interfaces = Collections.list(NetworkInterface.getNetworkInterfaces());
+            for (NetworkInterface intf : interfaces) {
+                List<InetAddress> addrs = Collections.list(intf.getInetAddresses());
+                for (InetAddress addr : addrs) {
+                    if (!addr.isLoopbackAddress()) {
+                        String sAddr = addr.getHostAddress();
+                        //boolean isIPv4 = InetAddressUtils.isIPv4Address(sAddr);
+                        boolean isIPv4 = sAddr.indexOf(':') < 0;
+                        if (useIPv4) {
+                            if (isIPv4)
+                                return sAddr;
+                        } else {
+                            if (!isIPv4) {
+                                int delim = sAddr.indexOf('%'); // drop ip6 zone suffix
+                                return delim < 0 ? sAddr.toUpperCase() : sAddr.substring(0, delim).toUpperCase();
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (Exception ignored) {
+        } // for now eat exceptions
+        return "";
+    }
+
+    // Model
+    public static String getModel(){
+        String model = android.os.Build.MODEL;
+        if (model.equals("AI-Speaker.com")) {
+            return "AIS-DEV1";
+        }
+        return model;
+    }
+
+    @Override
+    protected void onPreExecute() {
+        super.onPreExecute();
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.KITKAT)
+    @Override
+    protected String doInBackground(String... params) {
+        String urlString = "http://powiedz.co/ords/dom/dom/gate_ip_info"; // URL to call
+        OutputStream out = null;
+        String gateId = getSecureAndroidIdRoot();
+
+        JSONObject json = new JSONObject();
+        try {
+            json.put("local_ip", getIPAddress(true));
+            json.put("gate_id", gateId);
+            json.put("gate_model", getModel());
+        } catch (JSONException e) {
+            Log.e("AIS", e.toString());
+        }
+
+        try {
+            URL url = new URL(urlString);
+            HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
+            urlConnection.setRequestMethod("POST");
+            urlConnection.setRequestProperty("Content-Type", "application/json; utf-8");
+            urlConnection.setDoOutput(true);
+
+            try(OutputStream os = urlConnection.getOutputStream()) {
+                byte[] input = json.toString().getBytes("utf-8");
+                os.write(input, 0, input.length);
+            }
+
+            try(BufferedReader br = new BufferedReader(
+                    new InputStreamReader(urlConnection.getInputStream(), "utf-8"))) {
+                StringBuilder response = new StringBuilder();
+                String responseLine = null;
+                while ((responseLine = br.readLine()) != null) {
+                    response.append(responseLine.trim());
+                }
+                Log.i("AIS", response.toString());
+            }
+
+        } catch (Exception e) {
+            Log.e("AIS", "register gate " + e.getMessage());
+        }
+        return "OK";
     }
 }

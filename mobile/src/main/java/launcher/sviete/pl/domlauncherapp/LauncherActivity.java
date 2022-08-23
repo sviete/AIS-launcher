@@ -169,7 +169,7 @@ public class LauncherActivity extends AppCompatActivity {
         // trying to check if configuration file exists or not
         try {
             Process p = Runtime.getRuntime().exec(
-                    new String[]{"su", "-c", "ls /data/data/pl.sviete.dom/files/home/AIS/configuration.yaml"}
+                    new String[]{"su", "-c", "ls /data/data/com.termux/files/home/AIS/configuration.yaml"}
             );
             p.waitFor();
             int exitStatus = p.exitValue();
@@ -207,7 +207,7 @@ public class LauncherActivity extends AppCompatActivity {
         Log.d(TAG, "startConsoleActivity Called");
         try {
             Intent intent = new Intent(Intent.ACTION_MAIN);
-            intent.setComponent(new ComponentName("pl.sviete.dom","pl.sviete.termux.app.TermuxActivity"));
+            intent.setComponent(new ComponentName("com.termux","pl.sviete.termux.app.TermuxActivity"));
             startActivity(intent);
             finish();
         } catch (Exception e) {
@@ -222,7 +222,7 @@ public class LauncherActivity extends AppCompatActivity {
         if (mClickNo == 0) {
             try {
                 Process p = Runtime.getRuntime().exec(
-                        new String[]{"su", "-c", "ls /data/data/pl.sviete.dom/ais_setup_wizard_done"}
+                        new String[]{"su", "-c", "ls /data/data/com.termux/ais_setup_wizard_done"}
                 );
                 p.waitFor();
                 int exitStatus = p.exitValue();
@@ -249,7 +249,7 @@ public class LauncherActivity extends AppCompatActivity {
 
         try{
             Intent intent = new Intent(Intent.ACTION_MAIN);
-            intent.setComponent(new ComponentName("pl.sviete.dom","pl.sviete.dom.SplashScreenActivityMenu"));
+            intent.setComponent(new ComponentName("com.termux","pl.sviete.dom.SplashScreenActivityMenu"));
             intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
             startActivity(intent);
             finish();
@@ -496,195 +496,16 @@ public class LauncherActivity extends AppCompatActivity {
         Process p;
         int exitStatus = 0;
 
-        if (force){
-            // force update
-            // 1. move apk data first
-            try {
-                p = Runtime.getRuntime().exec(
-                        new String[]{"su", "-c", "mv /data/data/pl.sviete.dom/files  /data/data/launcher.sviete.pl.domlauncherapp/files"}
-                );
-                p.waitFor();
-                exitStatus = p.exitValue();
-                appendLog("installTheUpdate force move files folder exitStatus " + exitStatus);
-                // exitStatus == 0 all OK
-                appendLog("installTheUpdate force move files exitStatus " + exitStatus);
-
-                // move .ais folder
-                p = Runtime.getRuntime().exec(
-                        new String[]{"su", "-c", "mv /data/data/pl.sviete.dom/.ais  /data/data/launcher.sviete.pl.domlauncherapp/.ais"}
-                );
-                p.waitFor();
-                exitStatus = p.exitValue();
-                appendLog("installTheUpdate force move .ais exitStatus " + exitStatus);
-
-            } catch (Exception e) {
-                appendLog("move apk data error " +  e.toString());
-                e.printStackTrace();
-                return;
-            }
-            // 2. uninstall dom apk
-            // remove device admin
-            try {
-                appendLog("remove device admin");
-                p = Runtime.getRuntime().exec(
-                        new String[]{"su","-c", "am start -n pl.sviete.dom/.WelcomeActivity -a remove-device-admin"}
-                );
-                try {
-                    p.waitFor();
-                    BufferedReader stdInput = new BufferedReader(new
-                            InputStreamReader(p.getInputStream()));
-
-                    BufferedReader stdError = new BufferedReader(new
-                            InputStreamReader(p.getErrorStream()));
-                    String s = null;
-                    while ((s = stdInput.readLine()) != null) {
-                        appendLog(s);
-                    }
-
-                    while ((s = stdError.readLine()) != null) {
-                        appendLog(s);
-                    }
-                    if (p.exitValue() != 255) {
-                        appendLog("remove-device-admin all done..." + p.exitValue());
-
-                    }
-                    else {
-                        // TODO Code to run on unsuccessful
-                        appendLog("remove-device-admin exitValue: " + p.exitValue());
-                    }
-                } catch (InterruptedException e) {
-                    // TODO Code to run in interrupted exception
-                    appendLog("remove-device-admin InterruptedException: " + e.toString());
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-
-            try {
-                appendLog("pm clear pl.sviete.dom");
-                p = Runtime.getRuntime().exec(
-                        new String[]{"su","-c","pm clear pl.sviete.dom"}
-                );
-
-                try {
-                    p.waitFor();
-                    BufferedReader stdInput = new BufferedReader(new
-                            InputStreamReader(p.getInputStream()));
-
-                    BufferedReader stdError = new BufferedReader(new
-                            InputStreamReader(p.getErrorStream()));
-                    String s = null;
-                    while ((s = stdInput.readLine()) != null) {
-                        appendLog(s);
-                    }
-                    while ((s = stdError.readLine()) != null) {
-                        appendLog(s);
-                    }
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-
-            } catch (Exception e) {
-                appendLog("pm clear pl.sviete.dom " +  e.toString());
-                e.printStackTrace();
-            }
-
-
-            try {
-                appendLog("wait 5 seconds");
-                TimeUnit.SECONDS.sleep(5);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-
-            try {
-                appendLog("pm uninstall pl.sviete.dom");
-                p = Runtime.getRuntime().exec(
-                        new String[]{"su","-c","pm uninstall pl.sviete.dom"}
-                );
-
-                try {
-                    p.waitFor();
-                    BufferedReader stdInput = new BufferedReader(new
-                            InputStreamReader(p.getInputStream()));
-
-                    BufferedReader stdError = new BufferedReader(new
-                            InputStreamReader(p.getErrorStream()));
-                    String s = null;
-                    while ((s = stdInput.readLine()) != null) {
-                        appendLog(s);
-                    }
-                    while ((s = stdError.readLine()) != null) {
-                        appendLog(s);
-                    }
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-
-            } catch (Exception e) {
-                appendLog("pm uninstall pl.sviete.dom " +  e.toString());
-                e.printStackTrace();
-            }
-
-            try {
-                appendLog("wait 5 seconds");
-                TimeUnit.SECONDS.sleep(5);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-
-            try {
-                // create new install session
-                appendLog("pm install-create session");
-                p = Runtime.getRuntime().exec(
-                        new String[]{"su","-c","pm install-create"}
-                );
-
-                try {
-                    p.waitFor();
-                    BufferedReader stdInput = new BufferedReader(new
-                            InputStreamReader(p.getInputStream()));
-
-                    BufferedReader stdError = new BufferedReader(new
-                            InputStreamReader(p.getErrorStream()));
-                    String s = null;
-                    while ((s = stdInput.readLine()) != null) {
-                        appendLog(s);
-                    }
-                    while ((s = stdError.readLine()) != null) {
-                        appendLog(s);
-                    }
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-
-            } catch (Exception e) {
-                appendLog("pm install-create " +  e.toString());
-                e.printStackTrace();
-            }
-
-
-
-        }
-
-
-
         // do the normal installation
         try {
             File SDCardRoot = Environment.getExternalStorageDirectory();
             File update = new File(SDCardRoot, "AisPanelApp.apk");
 
             // run the app updates
-            if (force) {
-                appendLog("pm install " + update.getAbsolutePath());
-                p = Runtime.getRuntime().exec(
-                        new String[]{"su", "-c", "pm install -gf /sdcard/AisPanelApp.apk"}
-                );
-            } else {
-                p = Runtime.getRuntime().exec(
+            p = Runtime.getRuntime().exec(
                         new String[]{"su", "-c", "pm install -r " + update.getAbsolutePath()}
-                );
-            }
+            );
+
 
             try {
                 p.waitFor();
@@ -709,69 +530,10 @@ public class LauncherActivity extends AppCompatActivity {
         }
 
 
-        if (force){
-            // force update
-            // move apk data back
-            try {
-                p = Runtime.getRuntime().exec(
-                        new String[]{"su", "-c", "mv /data/data/launcher.sviete.pl.domlauncherapp/files /data/data/pl.sviete.dom/files"}
-                );
-                p.waitFor();
-                exitStatus = p.exitValue();
-                appendLog("installTheUpdate force move files folder back exitStatus " + exitStatus);
-                appendLog("move files folder data back " + exitStatus);
-            } catch (Exception e) {
-                appendLog("move files folder data back " +  e.toString());
-                e.printStackTrace();
-            }
-
-            try {
-                p = Runtime.getRuntime().exec(
-                        new String[]{"su", "-c", "mv /data/data/launcher.sviete.pl.domlauncherapp/.ais /data/data/pl.sviete.dom/.ais"}
-                );
-                p.waitFor();
-                exitStatus = p.exitValue();
-                appendLog("installTheUpdate force move .ais folder back exitStatus " + exitStatus);
-            } catch (Exception e) {
-                appendLog("move .ais folder data back " +  e.toString());
-                e.printStackTrace();
-            }
-
-
-            try {
-                p = Runtime.getRuntime().exec(
-                        new String[]{"su", "-c", "chown -R `stat /data/data/pl.sviete.dom -c %u:%g` /data/data/pl.sviete.dom/files"}
-                );
-                p.waitFor();
-                exitStatus = p.exitValue();
-                appendLog("installTheUpdate force chmod files folder " + exitStatus);
-                // exitStatus == 0 all OK
-            } catch (Exception e) {
-                appendLog("installTheUpdate force chmod filse folder " +  e.toString());
-                e.printStackTrace();
-            }
-
-            try {
-                p = Runtime.getRuntime().exec(
-                        new String[]{"su", "-c", "chown -R `stat /data/data/pl.sviete.dom -c %u:%g` /data/data/pl.sviete.dom/.ais"}
-                );
-                p.waitFor();
-                exitStatus = p.exitValue();
-                appendLog("installTheUpdate force chmod .ais folder " + exitStatus);
-                // exitStatus == 0 all OK
-                appendLog("installTheUpdate force chmod .ais folder " + exitStatus);
-            } catch (Exception e) {
-                appendLog("installTheUpdate force chmod .ais folder " +  e.toString());
-                e.printStackTrace();
-            }
-
-        }
-
-
         // open the app
         try {
             p = Runtime.getRuntime().exec(
-                    new String[]{"su","-c", "am start -n pl.sviete.dom/.WelcomeActivity"}
+                    new String[]{"su","-c", "am start -n com.termux/pl.sviete.dom.WelcomeActivity"}
             );
                 try {
                     p.waitFor();
